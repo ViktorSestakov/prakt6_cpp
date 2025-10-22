@@ -266,18 +266,14 @@ void Game() {
 			}
 		}
 
-		if (food.exists) {
-            board[food.pos.y][food.pos.x] = FOOD;
-        }
+		snake.draw(board);
+		drawBoard(board, score, snake.getLenght());
 
-        snake.draw(board);
-        drawBoard(board, score, snake.getLength());
+		Input(snake);
 
-        processInput(snake);
+		run = Update(snake, food, score);
 
-        run = update(snake, food, score);
-
-        Sleep(speed);
+		Sleep(speed);
 	}
 }
 
