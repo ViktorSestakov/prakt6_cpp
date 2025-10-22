@@ -1,8 +1,6 @@
-#include <iostream>
-#include <conio.h> // Для _kbhit() и _getch()
-#include <windows.h> // Для Sleep() и system("cls")
-#include <ctime>   // Для time() и srand()
-#include <locale.h> // Для setlocale()
+﻿#include <iostream>
+#include <conio.h>
+#include <windows.h>
 
 using namespace std;
 
@@ -14,13 +12,11 @@ const char Body = 'o';
 const char Food = '*';
 const char Empty = '.';
 
-// Структура для хранения координат
 struct Cords {
 	int x;
 	int y;
 };
 
-// Структура для сегмента змейки (используется как узел связного списка)
 struct Segment {
 	Cords pos;
 	Segment* next;
@@ -28,25 +24,22 @@ struct Segment {
 	Segment(int x, int y) : pos({ x, y }), next(nullptr) {}
 };
 
-// Класс Змейки
 class Snake {
 private:
-	int lenght; // Длина змейки
-	int dirX;  // Направление движения по X
-	int dirY;  // Направление движения по Y
+	int lenght;
+	int x;
+	int y;
 
 public:
-	Segment* head; // Голова змейки (начало связного списка)
+	Segment* head;
 
-	// Конструктор змейки
 	Snake(int stX, int stY) {
 		head = new Segment(stX, stY);
 		lenght = 1;
-		dirX = 1; // Начальное движение вправо
-		dirY = 0;
+		x = 1;
+		y = 0;
 	}
 
-	// Деструктор змейки (освобождение памяти)
 	~Snake() {
 		Segment* current = head;
 		while (current != nullptr) {
@@ -57,80 +50,70 @@ public:
 		head = nullptr;
 	}
 
-	// Получить позицию головы
-	Cords HeadPos() const { // Добавлен const, так как метод не меняет состояние объекта
+	Cords HeadPos() {
 		return head->pos;
 	}
 
-	// Задать новое направление движения
-	void setVector(int newDirX, int newDirY) {
-		// Запрещаем движение в противоположном направлении
-		if (dirX + newDirX != 0 || dirY + newDirY != 0) {
-			dirX = newDirX;
-			dirY = newDirY;
+	void setVector(int newX, int newY) {
+		if (x + newX != 0 || y + newY != 0) {
+			x = newX;
+			y = newY;
 		}
 	}
 
-	// Метод для обычного движения (без роста)
 	void move() {
-		// 1. Создаем новую голову
-		Cords newHeadPos = { head->pos.x + dirX, head->pos.y + dirY };
+		Cords newHeadPos = { head->pos.x + x, head->pos.y + y };
+
 		Segment* newHead = new Segment(newHeadPos.x, newHeadPos.y);
 		newHead->next = head;
 		head = newHead;
+		lenght++;
 
-		// 2. Находим хвост и удаляем его
-		Segment* tail = head;
-		Segment* prevOfTail = nullptr;
-		while (tail->next != nullptr) {
-			prevOfTail = tail;
-			tail = tail->next;
+		Segment* current = head;
+		Segment* prev = nullptr;
+
+		while (current->next != nullptr) {
+			prev = current;
+			current = current->next;
 		}
 
-		// tail теперь указывает на хвост
-		delete tail; // Удаляем хвост
+		delete current;
 
-		if (prevOfTail != nullptr) {
-			prevOfTail->next = nullptr; // Отсоединяем хвост
-		} else {
-			// Если prevOfTail == nullptr, значит, хвост был единственным сегментом (tail == head).
-			// Мы добавили новую голову, и она стала единственной.
-			// Старый head (который был единственным сегментом) удален.
-			// `lenght` остается 1.
+		if (prev != nullptr) {
+			prev->next = nullptr;
 		}
-		// `lenght` не меняется в `move()`, потому что один сегмент добавляется, один удаляется.
+		else {
+			delete head;
+			head == nullptr;
+		}
 	}
 
-	// Метод для движения с ростом (съедение еды)
 	void movengrow() {
-		Cords newHeadPos = { head->pos.x + dirX, head->pos.y + dirY };
+		Cords newHeadPos = { head->pos.x + x, head->pos.y + y };
 		Segment* newHead = new Segment(newHeadPos.x, newHeadPos.y);
 		newHead->next = head;
 		head = newHead;
-		lenght++; // <-- Увеличиваем длину
-		// Хвост НЕ удаляется
+		lenght++;
 	}
 
-	// Проверка на поедание самого себя
-	bool cheakEatYourself() const { // Добавлен const
-		if (lenght < 4) return false; // Змейка не может съесть себя, пока не вырастет до определенной длины
+	bool cheakEatYourself() const {
+		if (lenght < 4) return false;
 
 		Cords headPos = head->pos;
-		Segment* current = head->next; // Начинаем проверку со второго сегмента
+		Segment* current = head->next;
 
 		while (current != nullptr) {
 			if (current->pos.x == headPos.x && current->pos.y == headPos.y) {
-				return true; // Голова наехала на тело
+				return true;
 			}
+
 			current = current->next;
 		}
 
 		return false;
 	}
 
-	// Отрисовка змейки на игровом поле
-	// board передается по ссылке на массив, чтобы изменения были видны вызывающей стороне
-	void draw(char (&board)[Height][Width]) const { // Добавлен const
+	void draw(char board[Height][Width]) {
 		Segment* current = head;
 		int i = 0;
 
@@ -146,29 +129,24 @@ public:
 		}
 	}
 
-	// Получить длину змейки
-	int getLenght() const { // Добавлен const
+	int getLenght() {
 		return lenght;
 	}
 };
 
-// Структура для еды
 struct Phood {
 	Cords pos;
-	bool isEaten; // Переименовано для ясности
+	bool eat;
 
-	// Генерация новой позиции еды (должна быть свободной)
-	void generate(const Snake& snake) { // snake передается по const ссылке
+	void generate(const Snake snake) {
 		bool placed = false;
 		while (!placed) {
-			// Генерируем координаты внутри игрового поля (без учета стен)
-			pos.x = 1 + rand() % (Width - 2);
-			pos.y = 1 + rand() % (Height - 2);
+			pos.x = rand() % (Width);
+			pos.y = rand() % (Height);
 
 			bool onSnake = false;
 			Segment* current = snake.head;
 
-			// Проверяем, не находится ли еда на теле змейки
 			while (current != nullptr) {
 				if (current->pos.x == pos.x && current->pos.y == pos.y) {
 					onSnake = true;
@@ -178,174 +156,133 @@ struct Phood {
 			}
 
 			if (!onSnake) {
-				isEaten = false; // Еда готова к поеданию
+				eat = true;
 				placed = true;
 			}
 		}
 	}
 
-	// Конструктор
-	Phood() : isEaten(true) {} // Изначально еда "съедена", чтобы при первом вызове generate она появилась
+	Phood() : eat(false) {}
 };
 
-// --- Функции игры ---
-
-// Инициализация игры
-// snake и food передаются по ссылке, чтобы изменения были видны
-void setup(Snake& snake, Phood& food, int& score) { // score также по ссылке
-	srand(static_cast<unsigned int>(time(0))); // Более безопасный способ инициализации srand
+void setup(Snake snake, Phood food, int score) {
+	srand(time(0));
 	score = 0;
-	// Создаем змейку в центре левой части игрового поля
 	snake = Snake(Width / 4, Height / 2);
-	food.generate(snake); // Генерируем первую еду
+	food.generate(snake);
 }
 
-// Отрисовка игрового поля и информации
-// board передается по const ссылке, так как функция только читает данные
 void drawBoard(const char board[Height][Width], int score, int lenght) {
-	system("cls"); // Очистка консоли
+	system("cls");
 
-	// Верхняя граница
 	cout << "#";
 	for (int i = 0; i < Width - 2; ++i) {
 		cout << "-";
 	}
 	cout << "#";
-	cout << endl; // Переход на новую строку после верхней границы
 
-	// Игровое поле
 	for (int y = 1; y < Height - 1; ++y) {
-		cout << "#"; // Левая граница
+		cout << "#";
 		for (int x = 1; x < Width - 1; ++x) {
 			cout << board[y][x];
 		}
-		cout << "#"; // Правая граница
-		cout << endl; // Переход на новую строку
+		cout << "#";
 	}
 
-	// Нижняя граница
 	cout << "#";
 	for (int i = 0; i < Width - 2; ++i) {
 		cout << "-";
 	}
 	cout << "#";
-	cout << endl; // Переход на новую строку
 
-	// Информация об игроке
 	cout << "Score: " << score << " | Lenght: " << lenght << endl;
 }
 
-// Обработка ввода с клавиатуры
-// snake передается по ссылке, чтобы изменения направления были видны
-void Input(Snake& snake) {
-	if (_kbhit()) { // Проверяем, была ли нажата клавиша
-		int key = _getch(); // Получаем код нажатой клавиши
+void Input(Snake snake) {
+	if (_kbhit()) {
+		int key = _getch();
 
 		switch (key) {
 		case 'w': case 'W':
-			snake.setVector(0, -1); // Движение вверх
+			snake.setVector(0, -1);
 			break;
 		case 'a': case 'A':
-			snake.setVector(-1, 0); // Движение влево
+			snake.setVector(-1, 0);
 			break;
 		case 's': case 'S':
-			snake.setVector(0, 1);  // Движение вниз
+			snake.setVector(0, 1);
 			break;
 		case 'd': case 'D':
-			snake.setVector(1, 0);  // Движение вправо
-			break;
-		// Можно добавить выход из игры по другой кнопке, например ESC
-		case 27: // Код клавиши ESC
-			exit(0); // Завершить программу
+			snake.setVector(1, 0);
 			break;
 		}
 	}
 }
 
-// Основной цикл обновления состояния игры
-// Возвращает true, если игра продолжается, false - если конец игры
-// snake и food передаются по ссылке, score также по ссылке
-bool Update(Snake& snake, Phood& food, int& score) {
+bool Update(Snake snake, Phood food, int score) {
 	Cords head = snake.HeadPos();
 
-	// 1. Проверка столкновения со стенами
 	if (head.x <= 0 || head.x >= Width - 1 || head.y <= 0 || head.y >= Height - 1) {
-		return false; // Конец игры
+		return false;
 	}
 
-	// 2. Проверка столкновения с самим собой
 	if (snake.cheakEatYourself()) {
-		return false; // Конец игры
+		return false;
 	}
 
-	// 3. Проверка поедания еды
-	if (!food.isEaten && head.x == food.pos.x && head.y == food.pos.y) {
-		score += 10; // Увеличиваем счет
-		food.isEaten = true; // Еда съедена
-		snake.movengrow(); // Змейка растет
-		food.generate(snake); // Генерируем новую еду
+	if (food.eat && head.x == food.pos.x && head.y == food.pos.y) {
+		score += 10;
+		food.eat = false;
+		snake.movengrow();
+		food.generate(snake);
 	}
 	else {
-		// Если еда не была съедена, змейка просто движется
 		snake.move();
 	}
 
-	// 4. Дополнительная проверка (похоже, лишняя, так как столкновение со стенами уже обработано)
-	// if (snake.HeadPos().x == snake.HeadPos().y && snake.HeadPos().x == 0) {
-	// 	return false;
-	// }
+	if (snake.HeadPos().x == snake.HeadPos().y && snake.HeadPos().x == 0) {
+		return false;
+	}
 
-	return true; // Игра продолжается
+	return true;
 }
 
-// Основная игровая функция
 void Game() {
-	Snake snake(0, 0); // Начальные параметры snake здесь не имеют значения, т.к. setup их переопределит
+	Snake snake(0, 0);
 	Phood food;
 	int score = 0;
-	bool run = true; // Флаг для основного цикла
+	bool run = true;
 
-	setup(snake, food, score); // Инициализация
+	setup(snake, food, score);
 
-	const int speed = 150; // Скорость игры (чем меньше, тем быстрее)
+	const int speed = 150;
 
 	while (run) {
-		// Игровое поле (на каждом шаге очищаем и отрисовываем заново)
 		char board[Height][Width];
 		for (int y = 0; y < Height; ++y) {
 			for (int x = 0; x < Width; ++x) {
-				board[y][x] = Empty; // Заполняем поле пустыми символами
+				board[y][x] = Empty;
 			}
 		}
 
-		// Отрисовка змейки и еды на поле
-		// Важно: еду нужно отрисовать после змейки, чтобы она была видна, если оказалась на голове
-		if (!food.isEaten) {
+		if (!food.eat) {
 			board[food.pos.y][food.pos.x] = Food;
 		}
+
 		snake.draw(board);
+		drawBoard(board, score, snake.getLenght());
 
-		drawBoard(board, score, snake.getLenght()); // Отрисовка всего интерфейса
+		Input(snake);
 
-		Input(snake); // Обработка ввода
+		run = Update(snake, food, score);
 
-		run = Update(snake, food, score); // Обновление состояния игры
-
-		Sleep(speed); // Задержка для контроля скорости
+		Sleep(speed);
 	}
-
-	// Если цикл завершился (run == false)
-	cout << "Game Over!" << endl;
-	cout << "Final Score: " << score << endl;
-	// Пауза перед закрытием, чтобы пользователь увидел результат
-	system("pause");
 }
 
 int main()
 {
-	setlocale(LC_ALL, "Russian"); // Для корректного отображения русских символов (хотя в данном коде они не используются)
+	setlocale(LC_ALL, "Russian");
 
-	Game(); // Запуск игры
-
-	return 0;
+	Game();
 }
